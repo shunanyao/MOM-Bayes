@@ -1,125 +1,8 @@
 library(rstan)
 library("bayesplot")
 library("ggplot2")
-library(gridExtra)
-library(grid)
-library(lattice)
-library(latex2exp)
-library(leaps)
 
 rm(list = ls())
-
-set.seed(20210226)
-
-d = read.csv('C:/Users/yaosh/Desktop/wine.csv', header = TRUE)
-index = rbinom(1599 * 12, 1, 0.001)
-index = matrix(index, nrow = 1599, ncol = 12)
-d_mean = colMeans(d)
-d_mean = rep(d_mean, 1599)
-d_mean = matrix(d_mean, nrow = 12, ncol = 1599)
-d_mean = t(d_mean)
-d_var = var(d)
-d_var = diag(d_var)
-d_var = rep(d_var, 1599)
-d_var = matrix(d_var, nrow = 12, ncol = 1599)
-d_var = t(d_var)
-d_var = sqrt(d_var)
-x_data = d - d_mean
-x_data = x_data / d_var
-vars = c(2, 5, 7, 9, 10, 11, 12)
-x_data = x_data[,vars]
-
-regfit = regsubsets(quality ~., data = x_data, nvmax = 11)
-reg_summary = summary(regfit)
-
-# free.sulfur.dioxide +
-  # pH +
-# chlorides +
-# +  sulphates
-regfit_true = lm(quality ~ ., data = x_data)
-hist(regfit_true$residuals, breaks = 30)
-
-sigma = sqrt(var(regfit_true$residuals))
-
-
-
-# error = rnorm(1599 * 12, 10000, 100)
-# error = matrix(error, nrow = 1599, ncol = 12)
-# x_data[index == 1] = error[index == 1]
-
-
-k = 39
-n = floor(1599 / k)
-dim = dim(x_data)[2]
-a = 2
-mu_prior = rep(0, dim)
-sigma_prior = diag(rep(100, dim))
-
-
-
-mom_data = list(
-  a = a,
-  n = n,                                   
-  k = k,
-  dim = dim,
-  x_data = x_data,                          
-  mu_prior = mu_prior,
-  sigma_prior = sigma_prior
-)
-# control = list(
-#   max_treedepth = 12
-# )
-fit1 <- stan(
-  file = "C:/Users/yaosh/Desktop/normal.stan",  # path to mom.stan
-  data = mom_data,        # named list of data
-  chains = 4,             # number of Markov chains
-  warmup = 2000,          # number of warmup iterations per chain
-  iter = 12000,            # total number of iterations per chain
-  cores = 3,              # number of cores (could use one per chain)
-  refresh = 0             # no progress shown
-  # control = control
-)
-# stats[j,] = summary(fit1)$summary[3,]
-stats_summary = summary(fit1)[[1]]
-sd = stats_summary[1,3]
-asym_sd = sqrt(k * n) * sd
-asym_sd_vec[j] = asym_sd
-zero_in_ci = (0 >= stats_summary[1,4]) & (0 <= stats_summary[1,8])
-zero_in_ci_vec[j] = zero_in_ci
-posterior = as.vector(as.matrix(fit1)[,1])
-posterior_vec = c(posterior_vec, posterior)
-
-
-plot = c()
-for (j in 1 : 12) {
-  x = as.matrix(fit1)[,j]
-  df = data.frame(posterior = x)
-  p = ggplot(df, aes(x=posterior)) + geom_density() + geom_density(color="blue")
-  d <- ggplot_build(p)$data[[1]]
-  q1 = quantile(x, 0.025)
-  q2 = quantile(x, 0.975)
-  p = p + geom_area(data = subset(d, x > q1 & x < q2), aes(x=x, y=y), fill="deepskyblue1", alpha = 0.2)
-  # sigma_square = 1 / ((1 / sigma_prior^2) + (k * n / 1))
-  # mu = sigma_square * (mu_prior / sigma_prior^2 + sum(x) / 1)
-  # sigma = sqrt(sigma_square)
-  # p = p + stat_function(fun = dnorm, args = list(mu, sigma), color = 'red', linetype = 'dashed') + stat_function(fun=funcShaded, args = list(mu, sigma), geom="area", fill="tomato", alpha=0.2)
-  # p = p + ylab('posterior')
-  p = p + xlab(paste(' '))
-  p = p + theme_minimal()
-  # p = p + theme(text = element_text(size=20), axis.title.x = element_blank())
-  # p = p + ggtitle('MOM tournament posterior')
-  # p = p + theme(plot.title = element_text(hjust = 0.5))
-  
-  plot[[j]] = p
-}
-
-grid.arrange(plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]], plot[[6]], plot[[7]], plot[[8]], plot[[9]], plot[[10]], plot[[11]], plot[[12]], nrow = 4, ncol = 3)
-
-
-
-
-
-
 # 
 # 
 # 
@@ -142,7 +25,7 @@ zero_in_ci_vec = rep(TRUE, M)
 posterior_vec = list()
 k_vec = c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
 a = 2
-mu_prior = -29.5
+mu_prior = 0
 sigma_prior = 1
 posterior_vec = c()
 
@@ -168,25 +51,25 @@ for (j in 1 : M) {
     sigma_prior = sigma_prior
   )
   fit1 <- stan(
-    file = "mom_median.stan",  # path to mom.stan
+    file = "C:/Users/lenovo/Desktop/mom_2_median.stan",  # path to mom.stan
     data = mom_data,        # named list of data
     chains = 4,             # number of Markov chains
     warmup = 2000,          # number of warmup iterations per chain
     iter = 12000,            # total number of iterations per chain
-    cores = 12,              # number of cores (could use one per chain)
+    cores = 3,              # number of cores (could use one per chain)
     refresh = 0             # no progress shown
   )
   # stats[j,] = summary(fit1)$summary[3,]
-  # stats_summary = summary(fit1)[[1]]
-  # sd = stats_summary[1,3]
-  # asym_sd = sqrt(k * n) * sd
-  # asym_sd_vec[j] = asym_sd
-  # zero_in_ci = (0 >= stats_summary[1,4]) & (0 <= stats_summary[1,8])
-  # zero_in_ci_vec[j] = zero_in_ci
+  stats_summary = summary(fit1)[[1]]
+  sd = stats_summary[1,3]
+  asym_sd = sqrt(k * n) * sd
+  asym_sd_vec[j] = asym_sd
+  zero_in_ci = (0 >= stats_summary[1,4]) & (0 <= stats_summary[1,8])
+  zero_in_ci_vec[j] = zero_in_ci
   posterior = as.vector(as.matrix(fit1)[,1])
   posterior_vec = c(posterior_vec, posterior)
-  # # colnames(posterior) = c('theta')
-  # posterior_plot = mcmc_areas(posterior, prob = 0.95)
+  # # # colnames(posterior) = c('theta')
+  # # posterior_plot = mcmc_areas(posterior, prob = 0.95)
   # sigma_square = 1 / ((1 / sigma_prior^2) + (k * n / 1))
   # mu = sigma_square * (mu_prior / sigma_prior^2 + sum(x) / 1)
   # sigma = sqrt(sigma_square)
@@ -460,7 +343,6 @@ save.image("C:/Users/lenovo/Desktop/MoM/1000_weak_wrong_belief_with_outliers_2_m
 rm(list = ls())
 
 set.seed(20210226)
-# set.seed(20210503)
 
 funcShaded <- function(x, mu, sigma) {
   y <- dnorm(x, mean = mu, sd = sigma)
@@ -500,12 +382,12 @@ for (j in 1 : M) {
     sigma_prior = sigma_prior
   )
   fit1 <- stan(
-    file = "C:/Users/yaosh/Desktop/MoM/mom_median.stan",  # path to mom.stan
+    file = "C:/Users/lenovo/Desktop/mom_median.stan",  # path to mom.stan
     data = mom_data,        # named list of data
     chains = 4,             # number of Markov chains
     warmup = 2000,          # number of warmup iterations per chain
     iter = 12000,            # total number of iterations per chain
-    cores = 3,              # number of cores (could use one per chain)
+    cores = 2,              # number of cores (could use one per chain)
     refresh = 0             # no progress shown
   )
   # stats[j,] = summary(fit1)$summary[3,]
