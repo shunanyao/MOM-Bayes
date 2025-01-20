@@ -42,11 +42,7 @@ functions {
       }
     }
     mom = median(log_likelihood);
-    for(j in 1 : k){
-		  log_likelihood_dev[j] = log_likelihood[j] - mom;
-		}
-		log_likelihood_abs = abs(log_likelihood_dev);
-    mad = median(log_likelihood_abs) / 0.6745;
+    mad = 1;
     gradient = huber_gradient(log_likelihood, mom, k, n, mad, a);
     while(abs(gradient) > 0.005){
       increment =  gradient;
