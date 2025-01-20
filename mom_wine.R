@@ -35,18 +35,11 @@ vars = c(1,2,4,6,8,9,10,11)
 x_data = d[,vars]
 x_data = cbind(intercept = 1, x_data)
 y_data = d[,12]
-ind = rep(0, 4898)
-ind[sample(1 : 4898, 5, replace = FALSE)] = 1
-y_data[ind == 1] = rnorm(5, 1000, 10)
+# The next three lines are for adding outliers. Uncomment for outliers
+# ind = rep(0, 4898)
+# ind[sample(1 : 4898, 10, replace = FALSE)] = 1
+# y_data[ind == 1] = rnorm(10, 1000, 10)
 
-
-# regfit = regsubsets(quality ~., data = d, nvmax = 11)
-# reg_summary = summary(regfit)
-# 
-# dat = cbind(x_data, quality = y_data)
-# regfit_true = lm(quality ~ ., data = dat)
-# hist(regfit_true$residuals, breaks = 30)
-# sigma = sqrt(var(regfit_true$residuals))
 
 
 k = 31
